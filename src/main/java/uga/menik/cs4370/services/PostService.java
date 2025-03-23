@@ -90,7 +90,16 @@ public class PostService {
 
     // Method for getting all posts (home page)
     public List<Post> getPosts() {
-        return getPosts(null);
+        String whereClause = """
+            WHERE p.userId IN (
+                SELECT followeeUserId 
+                FROM follow 
+                WHERE followerUserId = ?
+            )
+            ORDER BY p.postDate DESC
+            """;
+        return getPosts(whereClause, 
+            Integer.parseInt(userService.getLoggedInUser().getUserId()));
     }
 
     // Method for getting posts by user ID (profile page)
