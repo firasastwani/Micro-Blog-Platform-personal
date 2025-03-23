@@ -23,7 +23,7 @@ CREATE TABLE post (
     postId INT AUTO_INCREMENT PRIMARY KEY,
     userId INT NOT NULL,
     content VARCHAR(1000) NOT NULL,
-    postDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    postDate DATETIME DEFAULT CURRENT_TIMESTAMP,    
     FOREIGN KEY (userId) REFERENCES user(userId)  -- Assuming there's a 'users' table
 );
 --Create table comment
