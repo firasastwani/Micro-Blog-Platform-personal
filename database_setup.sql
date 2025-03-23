@@ -18,7 +18,7 @@ create table if not exists user (
     constraint lastName_min_length check (char_length(trim(lastName)) >= 2)
 );
 
---Create post table
+-- Create post table
 CREATE TABLE post (
     postId INT AUTO_INCREMENT PRIMARY KEY,
     userId INT NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE post (
     isBookmarked TINYINT(1) DEFAULT 0,
     FOREIGN KEY (userId) REFERENCES user(userId)  -- Assuming there's a 'users' table
 );
---Create table comment
+-- Create table comment
 CREATE TABLE comment (
     commentId INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     postId INT NOT NULL,
