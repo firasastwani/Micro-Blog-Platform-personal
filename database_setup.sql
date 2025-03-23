@@ -74,13 +74,3 @@ CREATE TABLE follow (
     FOREIGN KEY (followeeUserId) REFERENCES user(userId)
 );
 
----create table comment
-CREATE TABLE comment (
-    commentId INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    postId INT NOT NULL,
-    userId INT NOT NULL,
-    content VARCHAR(1000) NOT NULL,
-    commentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (postId) REFERENCES post(postId),
-    FOREIGN KEY (userId) REFERENCES user(userId)
-);

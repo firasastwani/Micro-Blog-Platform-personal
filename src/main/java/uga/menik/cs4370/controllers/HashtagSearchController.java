@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
+import uga.menik.cs4370.services.HashtagService;
 import uga.menik.cs4370.utility.Utility;
 
 /**
@@ -24,6 +25,11 @@ import uga.menik.cs4370.utility.Utility;
 @RequestMapping("/hashtagsearch")
 public class HashtagSearchController {
 
+    private final HashtagService hashtagService;
+
+    public HashtagSearchController (HashtagService hashtagService){
+        this.hashtagService = hashtagService;
+    }
     /**
      * This function handles the /hashtagsearch URL itself.
      * This URL can process a request parameter with name hashtags.
@@ -40,7 +46,7 @@ public class HashtagSearchController {
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
+        List<Post> posts = hashtagService.searchHashtag(hashtags);
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the

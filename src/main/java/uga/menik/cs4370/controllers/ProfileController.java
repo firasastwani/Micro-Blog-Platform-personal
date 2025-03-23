@@ -8,6 +8,7 @@ package uga.menik.cs4370.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.ModelAndView;
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
 import uga.menik.cs4370.services.UserService;
+import uga.menik.cs4370.services.ProfileService;
 import uga.menik.cs4370.utility.Utility;
 
 /**
@@ -29,6 +31,7 @@ public class ProfileController {
     // UserService has user login and registration related functions.
     private final UserService userService;
     private final PostService postService;
+    private final ProfileService profileService;
 
    
     /**
@@ -36,9 +39,10 @@ public class ProfileController {
      * through dependency injection and inversion of control.
      */
     @Autowired
-    public ProfileController(UserService userService,PostService postService) {
+    public ProfileController(UserService userService,PostService postService, ProfileService profileService) {
         this.userService = userService;
         this.postService = postService;
+        this.profileService = profileService;
     }
 
     /**
@@ -59,14 +63,12 @@ public class ProfileController {
      */
     @GetMapping("/{userId}")
     public ModelAndView profileOfSpecificUser(@PathVariable("userId") String userId) {
-        System.out.println("User is attempting to view profile: " + userId);
-        
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
+        List<Post> posts = profileService.getProfilePosts(userId);
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the

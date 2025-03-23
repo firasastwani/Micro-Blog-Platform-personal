@@ -4,10 +4,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -121,37 +124,77 @@ public class PostService {
 
     public boolean addPost(String content) {
 
-        final String sql = "INSERT INTO post (userId, content) VALUES (?, ?)";
-    
+        final String insertPostSQL = "INSERT INTO post (userId, content) VALUES (?, ?)";
+        final String insertHashtagSQL = "INSERT INTO hashtag (hashtag, postId) VALUES (?, ?)";
+        final String getLastPostIdSQL = "SELECT MAX(postId) FROM post";
+
         // Get logged-in user
         User user = userService.getLoggedInUser();
+        if (user == null) {
+            System.out.println("User is not logged in.");
+            return false;
+        }
 
         // Convert userId (String) to int
         int userId;
-        
         try {
             userId = Integer.parseInt(user.getUserId());
         } catch (NumberFormatException e) {
-            System.out.println("Invalid user ID format.");
+            System.out.println("Invalid user ID format: " + user.getUserId());
             return false;
         }
-    
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-    
-            stmt.setInt(1, userId);  // Set userId
-            stmt.setString(2, content);  // Set post content
-    
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-    
+
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false); // Start transaction
+
+            // Insert post
+            int postId = -1;
+            try (PreparedStatement stmt = conn.prepareStatement(insertPostSQL, Statement.RETURN_GENERATED_KEYS)) {
+                stmt.setInt(1, userId);
+                stmt.setString(2, content);
+
+                int rowsAffected = stmt.executeUpdate();
+                if (rowsAffected > 0) {
+                    try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                                    postId = generatedKeys.getInt(1);
+                        }
+                    }
+                }
+            }
+
+            // If postId was not retrieved, use MAX(postId)
+            if (postId == -1) {
+                    try (PreparedStatement stmt = conn.prepareStatement(getLastPostIdSQL);
+                    ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        postId = rs.getInt(1);
+                    }
+                }
+            }
+
+            // Extract hashtags from content
+            Pattern pattern = Pattern.compile("#(\\w+)");
+            Matcher matcher = pattern.matcher(content);
+
+            // Insert hashtags if found
+            if (postId > 0) {
+                try (PreparedStatement stmt = conn.prepareStatement(insertHashtagSQL)) {
+                    while (matcher.find()) {
+                        stmt.setString(1, matcher.group(1));
+                        stmt.setInt(2, postId);
+                        stmt.addBatch();
+                    }
+                    stmt.executeBatch();
+                }
+            }
+
+            conn.commit(); // Commit transaction
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-    
-        return false;
     }
-    
-    
 
 }
