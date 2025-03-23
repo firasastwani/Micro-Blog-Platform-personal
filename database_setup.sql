@@ -24,10 +24,6 @@ CREATE TABLE post (
     userId INT NOT NULL,
     content VARCHAR(1000) NOT NULL,
     postDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-    heartsCount INT DEFAULT 0,
-    commentsCount INT DEFAULT 0,
-    isHearted TINYINT(1) DEFAULT 0,
-    isBookmarked TINYINT(1) DEFAULT 0,
     FOREIGN KEY (userId) REFERENCES user(userId)  -- Assuming there's a 'users' table
 );
 --Create table comment

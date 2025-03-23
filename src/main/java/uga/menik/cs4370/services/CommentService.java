@@ -33,41 +33,27 @@ public class CommentService {
         this.postService = postService;
     }
 
-    public boolean addComment(String postId, String comment){
-
+    public boolean addComment(String postId, String comment) {
         int postID = Integer.parseInt(postId);
         User user = userService.getLoggedInUser();
-        // Convert userId (String) to int
-        int userId;
-        userId = Integer.parseInt(user.getUserId());
+        int userId = Integer.parseInt(user.getUserId());
 
-        final String sql = "INSERT INTO comment (postId, userId, content) VALUES (?,?,?)";
-        final String updateSql = "UPDATE post SET commentsCount = commentsCount + 1 WHERE postId = ?";
+        final String sql = "INSERT INTO comment (postId, userId, content) VALUES (?, ?, ?)";
         
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-
-            conn.setAutoCommit(false);  // Ensure both statements are executed
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setInt(1, postID);  // Set userId
-            stmt.setInt(2, userId);  // Set post content
-            stmt.setString(3,comment);
+            stmt.setInt(1, postID);
+            stmt.setInt(2, userId);
+            stmt.setString(3, comment);
 
             int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected > 0) {
-                // Increment comment count in the post table
-                updateStmt.setInt(1, postID);
-                updateStmt.executeUpdate();
-                conn.commit(); // Commit transaction
-                return true;
-            } else {
-                return false;
-            }
+            return rowsAffected > 0;
+            
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     public List<ExpandedPost> getExpandedPostWithComments(int postId) {
