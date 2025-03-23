@@ -7,6 +7,9 @@ package uga.menik.cs4370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,8 @@ import uga.menik.cs4370.models.FollowableUser;
 import uga.menik.cs4370.models.User;
 import uga.menik.cs4370.services.PeopleService;
 import uga.menik.cs4370.services.UserService;
+import uga.menik.cs4370.services.FollowService;
+import javax.sql.DataSource;
 
 /**
  * Handles /people URL and its sub URL paths.
@@ -34,11 +39,15 @@ public class PeopleController {
     // Hint: Add a constructor with @Autowired annotation.
     private final UserService userService;
     private final PeopleService peopleService;
+    private final DataSource dataSource;
+    private final FollowService followService; 
 
     @Autowired
-    public PeopleController(PeopleService peopleService, UserService userService) {
+    public PeopleController(PeopleService peopleService, UserService userService, DataSource dataSource, FollowService followService) {
         this.peopleService = peopleService;
         this.userService = userService;
+        this.dataSource = dataSource;
+        this.followService = followService; 
     }
 
     /**
@@ -88,19 +97,48 @@ public class PeopleController {
      * The above URL assigns 1 to userId and false to isFollow.
      */
     @GetMapping("{userId}/follow/{isFollow}")
-    public String followUnfollowUser(@PathVariable("userId") String userId,
+    public String followUnfollowUser(
+            @PathVariable("userId") String userId,
             @PathVariable("isFollow") Boolean isFollow) {
         System.out.println("User is attempting to follow/unfollow a user:");
         System.out.println("\tuserId: " + userId);
         System.out.println("\tisFollow: " + isFollow);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/people";
+        try {
+            User currentUser = userService.getLoggedInUser();
+        
 
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to (un)follow the user. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/people?error=" + message;
+            if (currentUser.getUserId().equals(userId)) {
+                return redirectWithError("You cannot follow yourself.");
+            }
+
+            boolean success = followService.followUnfollowUser(
+                currentUser.getUserId(), 
+                userId, 
+                isFollow
+            );
+
+            if (success) {
+                return "redirect:/people";
+            }
+        } catch (IllegalArgumentException e) {
+            return redirectWithError(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error in followUnfollowUser: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return redirectWithError("Failed to " + (isFollow ? "follow" : "unfollow") + 
+                " the user. Please try again.");
     }
 
+    /**
+     * Helper method to create a redirect URL with an encoded error message.
+     *
+     * @param message The error message to encode
+     * @return The redirect URL string with encoded error message
+     */
+    private String redirectWithError(String message) {
+        return "redirect:/people?error=" + URLEncoder.encode(message, StandardCharsets.UTF_8);
+    }
 }
