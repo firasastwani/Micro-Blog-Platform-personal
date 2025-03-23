@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Collections;
 
 import javax.sql.DataSource;
 
@@ -85,6 +86,7 @@ public class PostService {
             System.err.println("Error getting posts: " + e.getMessage());
             e.printStackTrace();
         }
+        Collections.reverse(posts);
         return posts;
     }
 
