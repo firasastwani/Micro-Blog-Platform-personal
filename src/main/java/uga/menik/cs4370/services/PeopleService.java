@@ -44,7 +44,6 @@ public class PeopleService {
      * with id userIdToExclude.
      */
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
-        // Write an SQL query to find the users that are not the current user.
         List<FollowableUser> followableUsers = new ArrayList<>();
         String sql = """
             SELECT 
@@ -57,7 +56,13 @@ public class PeopleService {
                         '%b %d, %Y, %h:%i %p'
                     ),
                     'Never posted'
-                ) as lastActiveDate
+                ) as lastActiveDate,
+                EXISTS (
+                    SELECT 1 
+                    FROM follow f 
+                    WHERE f.followerUserId = ? 
+                    AND f.followeeUserId = u.userId
+                ) as isFollowed
             FROM user u
             WHERE u.userId != ?
             """;
@@ -65,7 +70,8 @@ public class PeopleService {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setString(1, userIdToExclude);
+            stmt.setString(1, userIdToExclude);  // For the EXISTS subquery
+            stmt.setString(2, userIdToExclude);  // For the WHERE clause
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -73,7 +79,7 @@ public class PeopleService {
                     rs.getString("userId"),
                     rs.getString("firstName"),
                     rs.getString("lastName"),
-                    false,
+                    rs.getBoolean("isFollowed"),  // Changed from false to actual follow status
                     rs.getString("lastActiveDate")
                 );
                 followableUsers.add(user);
