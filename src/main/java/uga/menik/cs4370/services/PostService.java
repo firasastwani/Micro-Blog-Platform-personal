@@ -125,7 +125,11 @@ public class PostService {
     
 
     public boolean addPost(String content) {
-
+        
+        if (content == null || content.trim().isEmpty()) {
+            return false;
+        }
+        
         final String insertPostSQL = "INSERT INTO post (userId, content) VALUES (?, ?)";
         final String insertHashtagSQL = "INSERT INTO hashtag (hashtag, postId) VALUES (?, ?)";
         final String getLastPostIdSQL = "SELECT MAX(postId) FROM post";
