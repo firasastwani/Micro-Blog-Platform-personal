@@ -28,30 +28,38 @@ public class HashtagService {
         this.postService = postService;
     }
 
-    public List<Post> searchHashtag(String hashtag) {
-        final String sql = "SELECT postId FROM hashtag WHERE hashtag = ?";
+    public List<Post> searchHashtag(String hashtags) {
+        // Remove the "#" from each hashtag and split the input string by spaces
+        String[] hashtagArray = hashtags.split("\\s+");
         
         List<Integer> postIds = new ArrayList<>();
         List<Post> posts = new ArrayList<>();
         
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        // Iterate over each hashtag and fetch associated posts
+        for (String hashtag : hashtagArray) {
+            // Clean the hashtag (remove '#' if present)
+            hashtag = hashtag.replace("#", "");
     
-            stmt.setString(1, hashtag);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    postIds.add(rs.getInt("postId"));
+            final String sql = "SELECT postId FROM hashtag WHERE hashtag = ?";
+            
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, hashtag);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        postIds.add(rs.getInt("postId"));
+                    }
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-    
+        
         // Fetch post details for each postId
         for (int postId : postIds) {
             posts.addAll(postService.getPosts("WHERE p.postId = ?", postId));
         }
-    
+        
         return posts;
     }
 
