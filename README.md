@@ -14,3 +14,5 @@ mvn spring-boot:run --% -Dspring-boot.run.arguments="--server.port=8081"
 
 Open the browser and navigate to the following URL:
 http://localhost:8081/
+
+Harley Guan: Implemented final version of hashtag search and comment, implemented prototype of post in homepage.
