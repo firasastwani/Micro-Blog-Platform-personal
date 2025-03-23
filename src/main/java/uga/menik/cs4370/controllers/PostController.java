@@ -23,6 +23,7 @@ import uga.menik.cs4370.services.CommentService;
 import uga.menik.cs4370.services.PostService;
 import uga.menik.cs4370.services.UserService;
 import uga.menik.cs4370.services.BookmarkService;
+import uga.menik.cs4370.services.LikePostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import uga.menik.cs4370.models.User;
 
@@ -39,13 +40,15 @@ public class PostController {
     private final CommentService commentService;
     private final UserService userService; 
     private final BookmarkService bookmarkService; 
+    private final LikePostService likePostService; 
 
     
-    public PostController(PostService postService, CommentService commentService, UserService userService, BookmarkService bookmarkService){
+    public PostController(PostService postService, CommentService commentService, UserService userService, BookmarkService bookmarkService, LikePostService likePostService){
         this.postService = postService;
         this.commentService = commentService;
         this.userService = userService; 
         this.bookmarkService = bookmarkService; 
+        this.likePostService = likePostService; 
     }
 
     /**
@@ -129,13 +132,19 @@ public class PostController {
         System.out.println("\tpostId: " + postId);
         System.out.println("\tisAdd: " + isAdd);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
-
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to (un)like the post. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/post/" + postId + "?error=" + message;
+        try {
+            if (isAdd) {
+                likePostService.addHeart(postId);
+            } else {
+                likePostService.removeHeart(postId);
+            }
+            return "redirect:/post/" + postId;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            String message = URLEncoder.encode("Failed to update heart status. Please try again.",
+                    StandardCharsets.UTF_8);
+            return "redirect:/post/" + postId + "?error=" + message;
+        }
     }
 
     /**
