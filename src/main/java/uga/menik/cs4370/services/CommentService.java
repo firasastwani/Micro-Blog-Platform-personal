@@ -42,17 +42,28 @@ public class CommentService {
         userId = Integer.parseInt(user.getUserId());
 
         final String sql = "INSERT INTO comment (postId, userId, content) VALUES (?,?,?)";
-
+        final String updateSql = "UPDATE post SET commentsCount = commentsCount + 1 WHERE postId = ?";
+        
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-    
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+
+            conn.setAutoCommit(false);  // Ensure both statements are executed
+            
             stmt.setInt(1, postID);  // Set userId
             stmt.setInt(2, userId);  // Set post content
             stmt.setString(3,comment);
 
             int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-    
+            if (rowsAffected > 0) {
+                // Increment comment count in the post table
+                updateStmt.setInt(1, postID);
+                updateStmt.executeUpdate();
+                conn.commit(); // Commit transaction
+                return true;
+            } else {
+                return false;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
