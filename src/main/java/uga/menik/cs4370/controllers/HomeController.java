@@ -7,6 +7,7 @@ package uga.menik.cs4370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.stereotype.Controller;
@@ -46,6 +47,7 @@ public class HomeController {
         // Following line populates sample data.
         // You should replace it with actual data from the database.
         List<Post> posts = postService.getPosts();
+        Collections.reverse(posts);
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the
