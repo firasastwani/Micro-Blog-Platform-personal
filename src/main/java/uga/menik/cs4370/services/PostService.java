@@ -33,92 +33,83 @@ public class PostService {
         this.userService = userService;
     }
     
-    public List<Post> getPosts() {
+    // Base method to get posts with all necessary information
+    public List<Post> getPosts(String whereClause, Object... params) {
         List<Post> posts = new ArrayList<>();
-        final String sql = "SELECT postId, userId, content, postDate, heartsCount, commentsCount, isHearted, isBookmarked " +
-                           "FROM post";
-    
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // Assuming the original date format is like "2025-03-07 10:54:00"
-        SimpleDateFormat outputFormat = new SimpleDateFormat("MMM dd, yyyy, hh:mm a"); // Format: "Mar 07, 2025, 10:54 PM"
-    
+        String sql = """
+            SELECT 
+                p.*,
+                (SELECT COUNT(*) FROM heart h WHERE h.postId = p.postId) as heartsCount,
+                (SELECT COUNT(*) FROM comment c WHERE c.postId = p.postId) as commentsCount,
+                (SELECT COUNT(*) > 0 FROM heart h WHERE h.postId = p.postId AND h.userId = ?) as isHearted,
+                (SELECT COUNT(*) > 0 FROM bookmark b WHERE b.postId = p.postId AND b.userId = ?) as isBookmarked
+            FROM post p
+            """ + (whereClause != null ? whereClause : "");
+
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-    
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            String currentUserId = userService.getLoggedInUser().getUserId();
+            // Set the standard parameters for bookmark and heart checks
+            stmt.setInt(1, Integer.parseInt(currentUserId));
+            stmt.setInt(2, Integer.parseInt(currentUserId));
+            
+            // Set any additional parameters from the whereClause
+            for (int i = 0; i < params.length; i++) {
+                stmt.setObject(i + 3, params[i]);
+            }
+
             ResultSet rs = stmt.executeQuery();
-    
             while (rs.next()) {
                 String postDateString = rs.getString("postDate");
                 Date postDate = null;
-    
-                // Parse the postDate string into a Date object
                 if (postDateString != null) {
-                    postDate = inputFormat.parse(postDateString);
+                    postDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(postDateString);
                 }
+                String formattedPostDate = (postDate != null) ? 
+                    new SimpleDateFormat("MMM dd, yyyy, hh:mm a").format(postDate) : "";
 
-                // Format the date to the desired format
-                String formattedPostDate = (postDate != null) ? outputFormat.format(postDate) : "";
                 Post post = new Post(
                     rs.getString("postId"),
-                    rs.getString("content"),
-                    formattedPostDate,  
-                    userService.getUserById(Integer.toString(rs.getInt("userId"))),
-                    rs.getInt("heartsCount"),
-                    rs.getInt("commentsCount"),
-                    rs.getBoolean("isHearted"),
-                    rs.getBoolean("isBookmarked")
-                );
-    
-                posts.add(post);
-            }
-    
-        } catch (Exception e) {
-            e.printStackTrace(); // Print error for debugging
-        }
-    
-        return posts;
-    }
-    
-    public Post getPostById(int postId) {
-        final String sql = "SELECT postId, userId, content, postDate, heartsCount, commentsCount, isHearted, isBookmarked " +
-                           "FROM post WHERE postId = ?";
-    
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // Original format
-        SimpleDateFormat outputFormat = new SimpleDateFormat("MMM dd, yyyy, hh:mm a"); // Desired format
-    
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-    
-            stmt.setInt(1, postId);
-            ResultSet rs = stmt.executeQuery();
-    
-            if (rs.next()) {
-                String postDateString = rs.getString("postDate");
-                Date postDate = null;
-    
-                if (postDateString != null) {
-                    postDate = inputFormat.parse(postDateString);
-                }
-    
-                // Format the date to the desired format
-                String formattedPostDate = (postDate != null) ? outputFormat.format(postDate) : "";
-    
-                return new Post(
-                    rs.getString("postId"),  // Use correct type
                     rs.getString("content"),
                     formattedPostDate,
                     userService.getUserById(Integer.toString(rs.getInt("userId"))),
                     rs.getInt("heartsCount"),
                     rs.getInt("commentsCount"),
-                    rs.getBoolean("isHearted"),
-                    rs.getBoolean("isBookmarked")
+                    rs.getInt("isHearted") > 0,
+                    rs.getInt("isBookmarked") > 0
                 );
+                posts.add(post);
             }
-    
         } catch (Exception e) {
-            e.printStackTrace(); // Print error for debugging
+            System.err.println("Error getting posts: " + e.getMessage());
+            e.printStackTrace();
         }
-    
-        return null; // Return null if the post is not found
+        return posts;
+    }
+
+    // Method for getting all posts (home page)
+    public List<Post> getPosts() {
+        return getPosts(null);
+    }
+
+    // Method for getting posts by user ID (profile page)
+    public List<Post> getPostsByUserId(String userId) {
+        return getPosts("WHERE p.userId = ?", Integer.parseInt(userId));
+    }
+
+    // Method for getting bookmarked posts
+    public List<Post> getBookmarkedPosts(String userId) {
+        return getPosts(
+            "INNER JOIN bookmark b ON p.postId = b.postId WHERE b.userId = ?", 
+            Integer.parseInt(userId)
+        );
+    }
+
+    // Method for getting a single post by ID
+    public Post getPostById(int postId) {
+        List<Post> posts = getPosts("WHERE p.postId = ?", postId);
+        return posts.isEmpty() ? null : posts.get(0);
     }
     
 

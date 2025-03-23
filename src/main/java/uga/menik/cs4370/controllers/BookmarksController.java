@@ -7,13 +7,15 @@ package uga.menik.cs4370.controllers;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
-import uga.menik.cs4370.utility.Utility;
+import uga.menik.cs4370.services.PostService;
+import uga.menik.cs4370.services.UserService;
 
 /**
  * Handles /bookmarks and its sub URLs.
@@ -26,6 +28,15 @@ import uga.menik.cs4370.utility.Utility;
 @RequestMapping("/bookmarks")
 public class BookmarksController {
 
+    private final PostService postService;
+    private final UserService userService;
+
+    @Autowired
+    public BookmarksController(PostService postService, UserService userService) {
+        this.postService = postService;
+        this.userService = userService;
+    }
+
     /**
      * /bookmarks URL itself is handled by this.
      */
@@ -36,19 +47,24 @@ public class BookmarksController {
         // in the template using Java objects assigned to named properties.
         ModelAndView mv = new ModelAndView("posts_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        mv.addObject("posts", posts);
-
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // String errorMessage = "Some error occured!";
-        // mv.addObject("errorMessage", errorMessage);
-
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
+        try {
+            // Get current user's ID
+            String currentUserId = userService.getLoggedInUser().getUserId();
+            
+            // Get bookmarked posts for current user
+            List<Post> posts = postService.getBookmarkedPosts(currentUserId);
+            
+            mv.addObject("posts", posts);
+            
+            if (posts.isEmpty()) {
+                mv.addObject("isNoContent", true);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error in bookmarks controller: " + e.getMessage());
+            e.printStackTrace();
+            mv.addObject("errorMessage", "Failed to load bookmarks. Please try again.");
+        }
 
         return mv;
     }

@@ -8,6 +8,7 @@ package uga.menik.cs4370.controllers;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.sql.SQLException;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,12 @@ import org.springframework.web.servlet.ModelAndView;
 import uga.menik.cs4370.models.ExpandedPost;
 import uga.menik.cs4370.services.CommentService;
 import uga.menik.cs4370.services.PostService;
+import uga.menik.cs4370.services.UserService;
+import uga.menik.cs4370.services.BookmarkService;
+import org.springframework.beans.factory.annotation.Autowired;
+import uga.menik.cs4370.models.User;
+
+
 
 /**
  * Handles /post URL and its sub urls.
@@ -30,10 +37,15 @@ public class PostController {
 
     private final PostService postService;
     private final CommentService commentService;
+    private final UserService userService; 
+    private final BookmarkService bookmarkService; 
 
-    public PostController(PostService postService, CommentService commentService){
+    
+    public PostController(PostService postService, CommentService commentService, UserService userService, BookmarkService bookmarkService){
         this.postService = postService;
         this.commentService = commentService;
+        this.userService = userService; 
+        this.bookmarkService = bookmarkService; 
     }
 
     /**
@@ -47,34 +59,24 @@ public class PostController {
      * See notes from HomeController.java regardig error URL parameter.
      */
     @GetMapping("/{postId}")
-    public ModelAndView webpage(@PathVariable("postId") String postId,
-            @RequestParam(name = "error", required = false) String error) {
-        System.out.println("The user is attempting to view post with id: " + postId);
-        // See notes on ModelAndView in BookmarksController.java.
+    public ModelAndView showExpandedPost(@PathVariable("postId") String postId) {
         ModelAndView mv = new ModelAndView("posts_page");
-
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        try{
-            int postID = Integer.parseInt(postId);
-            List<ExpandedPost> posts = commentService.getExpandedPostWithComments(postID);
-            mv.addObject("posts", posts);
-        }catch (Exception e){
-
-            String errorMessage = error;
-            mv.addObject("errorMessage", errorMessage);
-
+        
+        try {
+            // Get the expanded post with comments using CommentService
+            List<ExpandedPost> expandedPosts = commentService.getExpandedPostWithComments(Integer.parseInt(postId));
+            
+            if (!expandedPosts.isEmpty()) {
+                mv.addObject("posts", expandedPosts);
+            } else {
+                mv.addObject("isNoContent", true);
+                mv.addObject("errorMessage", "Post not found");
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting expanded post: " + e.getMessage());
+            mv.addObject("errorMessage", "Failed to load post. Please try again.");
         }
-      
-
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // An error message can be optionally specified with a url query parameter too.
-
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
-
+        
         return mv;
     }
 
@@ -143,17 +145,21 @@ public class PostController {
      * get type form submissions.
      */
     @GetMapping("/{postId}/bookmark/{isAdd}")
-    public String addOrRemoveBookmark(@PathVariable("postId") String postId,
+    public String addOrRemoveBookmark(
+            @PathVariable("postId") String postId,
             @PathVariable("isAdd") Boolean isAdd) {
-        System.out.println("The user is attempting add or remove a bookmark:");
-        System.out.println("\tpostId: " + postId);
-        System.out.println("\tisAdd: " + isAdd);
-
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
-
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to (un)bookmark the post. Please try again.",
+        try {
+            User user = userService.getLoggedInUser();
+            if (user != null) {
+                bookmarkService.addBookmark(user.getUserId(), postId);
+                // Redirect back to expanded post view
+                return "redirect:/post/" + postId;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error handling bookmark: " + e.getMessage());
+        }
+        
+        String message = URLEncoder.encode("Failed to update bookmark. Please try again.", 
                 StandardCharsets.UTF_8);
         return "redirect:/post/" + postId + "?error=" + message;
     }
