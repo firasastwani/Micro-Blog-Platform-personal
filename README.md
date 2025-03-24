@@ -20,3 +20,5 @@ Open the browser and navigate to the following URL:
 http://localhost:8081/
 
 Harley Guan: Implemented final version of hashtag search and comment, implemented prototype of post in homepage.
+
+Alexander Zakirov: Corrected order of posts in Profile/Home pages. Database troubleshooting. Recorded demo video.
