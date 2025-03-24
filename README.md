@@ -24,3 +24,5 @@ Harley Guan: Implemented final version of hashtag search and comment, implemente
 Alexander Zakirov: Corrected order of posts in Profile/Home pages. Database troubleshooting. Recorded demo video.
 
 Firas Astwani: Implemented bookmark service, like service, follow service, and people service as well as the corresponding controllers. 
+
+Wayne Lam: Implemented Profile service and Profile controller, created and tested database setup with sample user interactions.
