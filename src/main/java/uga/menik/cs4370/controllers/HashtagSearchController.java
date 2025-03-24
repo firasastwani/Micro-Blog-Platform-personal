@@ -6,6 +6,7 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 package uga.menik.cs4370.controllers;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,6 +48,13 @@ public class HashtagSearchController {
         // Following line populates sample data.
         // You should replace it with actual data from the database.
         List<Post> posts = hashtagService.searchHashtag(hashtags);
+
+        // Reverse the posts list order
+        List<Post> reversedPosts = new ArrayList<>();
+        for (int i = posts.size() - 1; i >= 0; i--) {
+            reversedPosts.add(posts.get(i));
+        }
+        posts = reversedPosts;
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the

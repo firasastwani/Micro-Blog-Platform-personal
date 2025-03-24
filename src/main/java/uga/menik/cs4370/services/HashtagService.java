@@ -31,33 +31,45 @@ public class HashtagService {
     public List<Post> searchHashtag(String hashtags) {
         // Remove the "#" from each hashtag and split the input string by spaces
         String[] hashtagArray = hashtags.split("\\s+");
-        
-        List<Integer> postIds = new ArrayList<>();
         List<Post> posts = new ArrayList<>();
         
-        // Iterate over each hashtag and fetch associated posts
+        // Clean the hashtags (remove '#' if present)
+        List<String> cleanedHashtags = new ArrayList<>();
         for (String hashtag : hashtagArray) {
-            // Clean the hashtag (remove '#' if present)
-            hashtag = hashtag.replace("#", "");
-    
-            final String sql = "SELECT postId FROM hashtag WHERE hashtag = ?";
-            
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, hashtag);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        postIds.add(rs.getInt("postId"));
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            cleanedHashtags.add(hashtag.replace("#", ""));
         }
         
-        // Fetch post details for each postId
-        for (int postId : postIds) {
-            posts.addAll(postService.getPosts("WHERE p.postId = ?", postId));
+        if (cleanedHashtags.isEmpty()) {
+            return posts;
+        }
+
+        // Build SQL query to find posts that contain all hashtags
+        final String sql = """
+            SELECT postId 
+            FROM hashtag 
+            WHERE hashtag IN (%s)
+            GROUP BY postId 
+            HAVING COUNT(DISTINCT hashtag) = ?
+            """.formatted(String.join(",", "?".repeat(cleanedHashtags.size()).split("")));
+        
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            // Set all hashtag parameters
+            for (int i = 0; i < cleanedHashtags.size(); i++) {
+                stmt.setString(i + 1, cleanedHashtags.get(i));
+            }
+            // Set the count parameter (number of hashtags that must match)
+            stmt.setInt(cleanedHashtags.size() + 1, cleanedHashtags.size());
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int postId = rs.getInt("postId");
+                    posts.addAll(postService.getPosts("WHERE p.postId = ? ORDER BY p.postDate DESC", postId));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         
         return posts;
