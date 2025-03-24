@@ -22,3 +22,5 @@ http://localhost:8081/
 Harley Guan: Implemented final version of hashtag search and comment, implemented prototype of post in homepage.
 
 Alexander Zakirov: Corrected order of posts in Profile/Home pages. Database troubleshooting. Recorded demo video.
+
+Firas Astwani: Implemented bookmark service, like service, follow service, and people service as well as the corresponding controllers. 
