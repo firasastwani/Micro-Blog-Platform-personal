@@ -1,6 +1,6 @@
 # Micro-Blog-Platform
 
-A full-stack micro-blogging platform designed to demonstrate scalable backend architecture, secure user authentication, and robust data management. Built with Java, Spring Boot, and MySQL, this project showcases enterprise-level backend development skills relevant for software engineering roles in distributed systems and fintech.
+A full-stack micro-blogging platform designed to demonstrate scalable backend architecture, secure user authentication, and robust data management. Built with Java, Spring Boot, and MySQL, this project showcases enterprise-level backend development skills relevant for software engineering roles in distributed systems.
 
 ## Project Overview
 
