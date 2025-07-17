@@ -1,28 +1,68 @@
-Start the MySQL docker container and get the mysql prompt.
+# Micro-Blog-Platform
 
-Create the database and the user table using the given database_setup.sql file. 
+A full-stack micro-blogging platform designed to demonstrate scalable backend architecture, secure user authentication, and robust data management. Built with Java, Spring Boot, and MySQL, this project showcases enterprise-level backend development skills relevant for software engineering roles in distributed systems and fintech.
 
-Execute the database_setup.sql file to create tables and populate essential values into tables.
+## Project Overview
 
-This is needed only if this is the first time running the web app.
+This platform enables users to:
 
-After the initial database setup, you can run the starter code as it is. The starter code can demo the app features with the static mock data it already has. You can use this to get an idea of how features should work. Note that the project code stays in your local machine. Not in the docker container.
+- Register, log in, and manage secure sessions
+- Create, view, and interact with posts (like, bookmark, comment)
+- Follow/unfollow other users and view personalized feeds
+- Search posts by hashtags
+- Experience a responsive UI with Mustache templates and custom CSS
 
-Navigate to the directory with the pom.xml using the terminal in your local machine and run the following command:
-On unix like machines:
-mvn spring-boot:run -Dspring-boot.run.jvmArguments='-Dserver.port=8081'
-On windows command line:
-mvn spring-boot:run -D"spring-boot.run.arguments=--server.port=8081"
-On windows power shell:
-mvn spring-boot:run --% -Dspring-boot.run.arguments="--server.port=8081"
+## Key Backend Features
 
-Open the browser and navigate to the following URL:
-http://localhost:8081/
+- **Spring Boot Service Layer**: Modular services for users, posts, comments, likes, bookmarks, follows, and hashtags
+- **Secure Authentication**: BCrypt password hashing, session-based authentication, and request interception
+- **SQL Injection Prevention**: All database access uses prepared statements
+- **Transaction Management**: Ensures data consistency for post creation and engagement actions
+- **Personalized Feeds**: Efficient SQL queries for user-specific content
+- **RESTful MVC Controllers**: Clean separation of concerns and robust error handling
+- **Comprehensive Logging**: Error and event logging for maintainability
 
-Harley Guan: Implemented final version of hashtag search and comment, implemented prototype of post in homepage.
+## Architecture Overview
 
-Alexander Zakirov: Corrected order of posts in Profile/Home pages. Database troubleshooting. Recorded demo video.
+- **Backend**: Java 17, Spring Boot 3.1.4, Spring Security, JDBC
+- **Database**: MySQL 8.0.33, relational schema for users, posts, comments, relationships, and engagement
+- **Frontend**: Mustache templates, HTML5, CSS3, JavaScript
+- **Build/Run**: Maven
 
-Firas Astwani: Implemented bookmark service, like service, follow service, and people service as well as the corresponding controllers. 
+## Setup Instructions
 
-Wayne Lam: Implemented Profile service and Profile controller, created and tested database setup with sample user interactions.
+1. **Start MySQL** (Docker or local install)
+2. **Initialize Database**
+   - Run `database_setup.sql` to create tables and seed essential data
+3. **Build & Run Backend**
+   - Navigate to the project directory with `pom.xml`
+   - Run:
+     ```sh
+     mvn spring-boot:run -Dspring-boot.run.jvmArguments='-Dserver.port=8081'
+     ```
+4. **Access the App**
+   - Open [http://localhost:8081/](http://localhost:8081/) in your browser
+
+## Tech Stack
+
+- **Java 17**
+- **Spring Boot 3.1.4**
+- **Spring Security**
+- **MySQL 8.0.33**
+- **Maven**
+- **BCrypt**
+- **Mustache Templates**
+- **HTML5, CSS3, JavaScript**
+
+## Example Backend Skills Demonstrated
+
+- Service-oriented architecture
+- Dependency injection and session management
+- Secure authentication and password management
+- SQL best practices and transaction safety
+- RESTful API design and MVC pattern
+- Error handling and logging
+
+---
+
+This project is designed for demonstration and learning purposes, and can be extended with additional features such as API endpoints, containerization, or cloud deployment for further backend engineering practice.
